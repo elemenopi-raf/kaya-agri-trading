@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="Kaya Agri Trading Server">
+    <featureManager>
+        <feature>webProfile-10.0</feature>
+    </featureManager>
+
+    <httpEndpoint id="defaultHttpEndpoint"
+                  host="*"
+                  httpPort="8080"
+                  httpsPort="8443"/>
+
+    <dataSource id="DefaultDataSource" jndiName="jdbc/kayaAgriDS">
+        <jdbcDriver libraryRef="postgresql-library"
+                    javax.sql.XADataSource="org.postgresql.xa.PGXADataSource"
+                    className="org.postgresql.ds.PGConnectionPoolDataSource"/>
+        <properties.postgresql
+            serverName="${env.DB_HOST}"
+            portNumber="${env.DB_PORT}"
+            databaseName="${env.DB_NAME}"
+            user="${env.DB_USER}"
+            password="${env.DB_PASSWORD}"/>
+    </dataSource>
+
+    <library id="postgresql-library">
+        <file name="${server.config.dir}/lib/postgresql-42.7.1.jar"/>
+    </library>
+
+    <webApplication id="kayaAgri" location="kaya-agri-backend.war" contextRoot="/api"/>
+</server>

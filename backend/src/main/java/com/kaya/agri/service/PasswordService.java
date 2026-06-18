@@ -1,0 +1,16 @@
+package com.kaya.agri.service;
+
+import at.favre.lib.crypto.bcrypt.BCrypt;
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class PasswordService {
+
+    public String hash(String plainPassword) {
+        return BCrypt.withDefaults().hashToString(12, plainPassword.toCharArray());
+    }
+
+    public boolean verify(String plainPassword, String hash) {
+        return BCrypt.verifyer().verify(plainPassword.toCharArray(), hash).verified;
+    }
+}
