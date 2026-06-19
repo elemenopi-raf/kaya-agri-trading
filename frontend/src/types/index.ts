@@ -155,3 +155,64 @@ export interface UnitOfMeasure {
   name: string
   abbreviation: string
 }
+
+export interface Customer {
+  id: number
+  name: string
+  phone?: string
+  email?: string
+  address?: string
+  active: boolean
+  createdAt: string
+}
+
+export interface CustomerRequest {
+  name: string
+  phone?: string
+  email?: string
+  address?: string
+}
+
+export interface Sale {
+  id: number
+  customerId?: number
+  customerName: string
+  saleDate: string
+  totalAmount: number
+  paidAmount: number
+  status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
+  notes?: string
+  createdBy?: string
+  createdAt: string
+  updatedAt: string
+  items: SaleItem[]
+  payments: Payment[]
+}
+
+export interface SaleItem {
+  id: number
+  productId: number
+  productName: string
+  productSku?: string
+  productUomAbbr: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+}
+
+export interface Payment {
+  id: number
+  saleId: number
+  amount: number
+  paymentMethod: string
+  referenceNo?: string
+  notes?: string
+  createdBy?: string
+  createdAt: string
+}
+
+export interface SaleItemRequest {
+  productId: number
+  quantity: string
+  unitPrice: string
+}

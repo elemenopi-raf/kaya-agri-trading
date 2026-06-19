@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Table, Select, Input, Button, Typography, Tag } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import api from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import type { Product, PagedResponse, Category } from '../types'
 import ProductCreateModal from './ProductCreateModal'
 
 function ProductList() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { user } = useAuth()
+  const canWrite = user?.roles?.some(r => r === 'ADMIN' || r === 'MANAGER')
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -48,7 +52,7 @@ function ProductList() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetch() }, [search, categoryId, subcategoryId, page])
+  useEffect(() => { fetch() }, [search, categoryId, subcategoryId, page, location.state?.refresh])
 
   const columns = [
     { title: 'Name', dataIndex: 'name', key: 'name' },
@@ -74,7 +78,7 @@ function ProductList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Typography.Title level={3} style={{ margin: 0 }}>Products</Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>New Product</Button>
+        {canWrite && <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>New Product</Button>}
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>

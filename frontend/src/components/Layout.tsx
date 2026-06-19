@@ -3,17 +3,27 @@ import { Layout as AntLayout, Menu, Button, theme } from 'antd'
 import {
   DashboardOutlined, ShoppingOutlined, SwapOutlined,
   ShoppingCartOutlined, TeamOutlined, LogoutOutlined,
+  UserOutlined, DollarOutlined,
 } from '@ant-design/icons'
 import { useAuth } from '../context/AuthContext'
 
 const { Sider, Content } = AntLayout
 
-const menuItems = [
-  { key: '/', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/products', icon: <ShoppingOutlined />, label: 'Products' },
-  { key: '/stock-movements', icon: <SwapOutlined />, label: 'Stock Movements' },
-  { key: '/purchase-orders', icon: <ShoppingCartOutlined />, label: 'Purchase Orders' },
-  { key: '/suppliers', icon: <TeamOutlined />, label: 'Suppliers' },
+interface MenuItem {
+  key: string
+  icon: React.ReactNode
+  label: string
+  roles: string[]
+}
+
+const allMenuItems: MenuItem[] = [
+  { key: '/', icon: <DashboardOutlined />, label: 'Dashboard', roles: [] },
+  { key: '/sales', icon: <DollarOutlined />, label: 'Sales', roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+  { key: '/customers', icon: <UserOutlined />, label: 'Customers', roles: ['ADMIN', 'MANAGER', 'CASHIER'] },
+  { key: '/products', icon: <ShoppingOutlined />, label: 'Products', roles: [] },
+  { key: '/stock-movements', icon: <SwapOutlined />, label: 'Stock Movements', roles: [] },
+  { key: '/purchase-orders', icon: <ShoppingCartOutlined />, label: 'Purchase Orders', roles: ['ADMIN', 'MANAGER', 'CLERK'] },
+  { key: '/suppliers', icon: <TeamOutlined />, label: 'Suppliers', roles: ['ADMIN', 'MANAGER', 'CLERK'] },
 ]
 
 function Layout() {
@@ -23,6 +33,10 @@ function Layout() {
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken()
 
   const selectedKey = '/' + location.pathname.split('/').filter(Boolean)[0]
+
+  const menuItems = allMenuItems
+    .filter(item => !item.roles.length || item.roles.some(r => user?.roles?.includes(r)))
+    .map(({ roles, ...rest }) => rest)
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>

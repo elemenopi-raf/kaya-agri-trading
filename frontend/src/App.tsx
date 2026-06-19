@@ -14,6 +14,9 @@ import SupplierList from './pages/SupplierList'
 import SupplierForm from './pages/SupplierForm'
 import PurchaseOrderList from './pages/PurchaseOrderList'
 import PurchaseOrderDetail from './pages/PurchaseOrderDetail'
+import CustomerList from './pages/CustomerList'
+import SaleList from './pages/SaleList'
+import SaleDetail from './pages/SaleDetail'
 
 function App() {
   return (
@@ -31,13 +34,22 @@ function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="products" element={<ProductList />} />
-              <Route path="products/:id/edit" element={<ProductForm />} />
+              <Route path="products/:id/edit" element={
+                <ProtectedRoute roles={['ADMIN', 'MANAGER']}><ProductForm /></ProtectedRoute>
+              } />
               <Route path="stock-movements" element={<StockMovementList />} />
-              <Route path="stock-movements/new" element={<StockMovementForm />} />
+              <Route path="stock-movements/new" element={
+                <ProtectedRoute roles={['ADMIN', 'MANAGER']}><StockMovementForm /></ProtectedRoute>
+              } />
               <Route path="suppliers" element={<SupplierList />} />
-              <Route path="suppliers/:id/edit" element={<SupplierForm />} />
+              <Route path="suppliers/:id/edit" element={
+                <ProtectedRoute roles={['ADMIN', 'MANAGER']}><SupplierForm /></ProtectedRoute>
+              } />
               <Route path="purchase-orders" element={<PurchaseOrderList />} />
               <Route path="purchase-orders/:id" element={<PurchaseOrderDetail />} />
+              <Route path="customers" element={<CustomerList />} />
+              <Route path="sales" element={<SaleList />} />
+              <Route path="sales/:id" element={<SaleDetail />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

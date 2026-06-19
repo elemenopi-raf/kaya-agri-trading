@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Table, Select, Button, Typography, Tag } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import api from '../services/api'
@@ -12,6 +12,7 @@ const statusColors: Record<string, string> = {
 
 function PurchaseOrderList() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -31,7 +32,7 @@ function PurchaseOrderList() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetch() }, [statusFilter, page])
+  useEffect(() => { fetch() }, [statusFilter, page, location.state?.refresh])
 
   const columns = [
     { title: 'PO Number', dataIndex: 'poNumber', key: 'poNumber' },
