@@ -16,7 +16,7 @@ import java.util.Set;
 public class JwtAuthFilter implements ContainerRequestFilter {
 
     private static final Set<String> PUBLIC_PREFIXES = Set.of(
-        "auth/login", "health"
+        "auth/login", "health", "admin/re-seed"
     );
 
     @Inject

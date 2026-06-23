@@ -4,6 +4,7 @@ import com.kaya.agri.dto.PagedResponse;
 import com.kaya.agri.dto.PurchaseOrderRequest;
 import com.kaya.agri.dto.PurchaseOrderResponse;
 import com.kaya.agri.service.PurchaseOrderService;
+import com.kaya.agri.security.RoleUtil;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -38,6 +39,7 @@ public class PurchaseOrderResource {
 
     @POST
     public Response create(PurchaseOrderRequest request, @Context SecurityContext ctx) {
+        RoleUtil.requireRole(ctx, "ADMIN", "MANAGER");
         try {
             PurchaseOrderResponse created = service.create(request, ctx.getUserPrincipal().getName());
             return Response.status(Response.Status.CREATED).entity(created).build();
@@ -51,6 +53,7 @@ public class PurchaseOrderResource {
     @PUT @Path("/{id}/status")
     public Response updateStatus(@PathParam("id") Integer id, Map<String, String> body,
                                   @Context SecurityContext ctx) {
+        RoleUtil.requireRole(ctx, "ADMIN", "MANAGER");
         String newStatus = body.get("status");
         if (newStatus == null || newStatus.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)

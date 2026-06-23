@@ -4,6 +4,7 @@ import com.kaya.agri.dto.PagedResponse;
 import com.kaya.agri.dto.StockMovementRequest;
 import com.kaya.agri.dto.StockMovementResponse;
 import com.kaya.agri.service.StockMovementService;
+import com.kaya.agri.security.RoleUtil;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -40,6 +41,7 @@ public class StockMovementResource {
 
     @POST
     public Response create(StockMovementRequest request, @Context SecurityContext ctx) {
+        RoleUtil.requireRole(ctx, "ADMIN", "MANAGER");
         try {
             String username = ctx.getUserPrincipal().getName();
             StockMovementResponse created = service.create(request, username);

@@ -154,7 +154,7 @@ function PurchaseOrderCreateModal({ open, onClose }: Props) {
         </div>
       </Modal>
       <Modal title="Success" open={open && success} closable={false} footer={
-        <Button type="primary" onClick={() => { onClose(); navigate('/purchase-orders') }}>OK</Button>
+        <Button type="primary" onClick={() => { onClose(); navigate('/purchase-orders', { state: { refresh: Date.now() } }) }}>OK</Button>
       }>
         <p>Purchase order created successfully!</p>
       </Modal>

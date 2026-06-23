@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Table, Select, Input, Tag, Typography, Button } from 'antd'
 import api from '../services/api'
 import type { StockMovement, PagedResponse, Product } from '../types'
+import StockMovementViewModal from './StockMovementViewModal'
 
 const typeColors: Record<string, string> = { IN: 'green', OUT: 'red', ADJUSTMENT: 'orange' }
 
@@ -15,6 +16,8 @@ function StockMovementList() {
   const [products, setProducts] = useState<Product[]>([])
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [viewModalOpen, setViewModalOpen] = useState(false)
+  const [viewingMovement, setViewingMovement] = useState<StockMovement | null>(null)
 
   useEffect(() => {
     if (productSearch.length >= 1) {
@@ -30,7 +33,7 @@ function StockMovementList() {
     if (productId) params.set('productId', String(productId))
     if (movementType) params.set('movementType', movementType)
     params.set('page', String(page - 1))
-    params.set('pageSize', '20')
+    params.set('pageSize', '10')
     api.get<PagedResponse<StockMovement>>(`/stock-movements?${params}`)
       .then(data => { setMovements(data.items); setTotal(data.totalCount) })
       .catch(() => {})
@@ -82,8 +85,13 @@ function StockMovementList() {
         {productId && <Button onClick={() => { setProductId(undefined); setProductSearch(''); setPage(1) }}>Clear</Button>}
       </div>
 
-      <Table dataSource={movements} columns={columns} rowKey="id" loading={loading}
-        pagination={{ current: page, pageSize: 20, total, onChange: p => setPage(p) }} />
+      <div className="table-container">
+        <Table dataSource={movements} columns={columns} rowKey="id" loading={loading} rowClassName="table-striped"
+          pagination={{ current: page, pageSize: 10, total, onChange: p => setPage(p), showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`, showSizeChanger: false }}
+          onRow={r => ({ onClick: () => { setViewingMovement(r); setViewModalOpen(true) }, style: { cursor: 'pointer' } })} />
+      </div>
+      <StockMovementViewModal movement={viewingMovement} open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)} />
     </div>
   )
 }

@@ -12,38 +12,28 @@ interface Props {
 function StockMovementCreateModal({ open, onClose }: Props) {
   const navigate = useNavigate()
   const [form] = Form.useForm()
-  const [productSearch, setProductSearch] = useState('')
   const [products, setProducts] = useState<Product[]>([])
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     if (open) {
       form.resetFields()
-      setSelectedProduct(null)
-      setProductSearch('')
       setSuccess(false)
+      api.get<PagedResponse<Product>>('/products?pageSize=200')
+        .then(data => setProducts(data.items))
+        .catch(() => {})
     }
   }, [open])
 
-  useEffect(() => {
-    if (productSearch.length >= 1 && !selectedProduct) {
-      api.get<PagedResponse<Product>>(`/products?search=${encodeURIComponent(productSearch)}&pageSize=10`)
-        .then(data => setProducts(data.items))
-        .catch(() => setProducts([]))
-    } else { setProducts([]) }
-  }, [productSearch, selectedProduct])
-
   async function handleSubmit(values: any) {
-    if (!selectedProduct) { message.error('Select a product'); return }
+    if (!values.productId) { message.error('Select a product'); return }
     if (!values.quantity || parseFloat(values.quantity) <= 0) { message.error('Quantity must be positive'); return }
 
     try {
       setSubmitting(true)
       await api.post('/stock-movements', {
-        productId: selectedProduct.id,
+        productId: values.productId,
         movementType: values.movementType,
         quantity: values.quantity,
         notes: values.notes || undefined,
@@ -56,40 +46,21 @@ function StockMovementCreateModal({ open, onClose }: Props) {
     }
   }
 
-  const emDash = String.fromCharCode(8212)
-
   return (
     <>
       <Modal title="Record Stock Movement" open={open && !success} onCancel={onClose} footer={null} destroyOnClose
         width={500}
         styles={{ body: { maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' } }}>
         <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ movementType: 'IN' }}>
-          <Form.Item label="Product" required>
-            {selectedProduct ? (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Input value={`${selectedProduct.name} (${selectedProduct.sku || 'no sku'}) ${emDash} stock: ${selectedProduct.currentStock} ${selectedProduct.unitOfMeasureAbbr}`}
-                  style={{ background: '#f5f5f5' }} readOnly />
-                <Button onClick={() => { setSelectedProduct(null); setProductSearch(''); form.setFieldValue('productId', undefined) }}>Change</Button>
-              </div>
-            ) : (
-              <div style={{ position: 'relative' }}>
-                <Input placeholder="Search product..."
-                  value={productSearch}
-                  onChange={e => { setProductSearch(e.target.value); setShowDropdown(true) }}
-                  onFocus={() => setShowDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)} />
-                {showDropdown && products.length > 0 && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #d9d9d9', zIndex: 10, maxHeight: 200, overflowY: 'auto' }}>
-                    {products.map(p => (
-                      <div key={p.id} onMouseDown={() => { setSelectedProduct(p); setShowDropdown(false) }}
-                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}>
-                        {p.name} <span style={{ color: '#999' }}>(stock: {p.currentStock} {p.unitOfMeasureAbbr})</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+          <Form.Item name="productId" label="Product" rules={[{ required: true, message: 'Select a product' }]}>
+            <Select showSearch placeholder="Search or select a product..."
+              filterOption={(input, option) =>
+                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+              options={products.map(p => ({
+                label: `${p.name} — stock: ${p.currentStock} ${p.unitOfMeasureAbbr}`,
+                value: p.id,
+              }))} />
           </Form.Item>
 
           <Form.Item name="movementType" label="Movement Type">
@@ -115,7 +86,7 @@ function StockMovementCreateModal({ open, onClose }: Props) {
         </Form>
       </Modal>
       <Modal title="Success" open={open && success} closable={false} footer={
-        <Button type="primary" onClick={() => { onClose(); navigate('/stock-movements') }}>OK</Button>
+        <Button type="primary" onClick={() => { onClose(); navigate('/stock-movements', { state: { refresh: Date.now() } }) }}>OK</Button>
       }>
         <p>Stock movement recorded successfully!</p>
       </Modal>
