@@ -1,3 +1,14 @@
+CREATE TABLE customers (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    phone VARCHAR(50),
+    email VARCHAR(200),
+    address TEXT,
+    active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
@@ -45,6 +56,7 @@ CREATE TABLE products (
     reorder_level DECIMAL(12,2) DEFAULT 0,
     current_stock DECIMAL(12,2) DEFAULT 0,
     active BOOLEAN DEFAULT TRUE,
+    version BIGINT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -119,7 +131,40 @@ CREATE TABLE stock_movements (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO roles (name) VALUES ('ADMIN'), ('CLERK'), ('VIEWER');
+CREATE TABLE sales (
+    id SERIAL PRIMARY KEY,
+    customer_id INTEGER REFERENCES customers(id),
+    sale_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    paid_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'CANCELLED')),
+    notes TEXT,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sale_items (
+    id SERIAL PRIMARY KEY,
+    sale_id INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity DECIMAL(12,2) NOT NULL,
+    unit_price DECIMAL(12,2) NOT NULL,
+    total_price DECIMAL(12,2) GENERATED ALWAYS AS (quantity * unit_price) STORED
+);
+
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    sale_id INTEGER NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+    amount DECIMAL(12,2) NOT NULL,
+    payment_method VARCHAR(20) NOT NULL CHECK (payment_method IN ('CASH', 'TRANSFER', 'GCASH', 'CHECK', 'OTHER')),
+    reference_no VARCHAR(100),
+    notes TEXT,
+    created_by INTEGER REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO roles (name) VALUES ('ADMIN'), ('MANAGER'), ('CLERK'), ('CASHIER'), ('VIEWER');
 
 INSERT INTO unit_of_measures (name, abbreviation) VALUES
     ('Kilogram', 'kg'),
@@ -145,4 +190,3 @@ INSERT INTO subcategories (category_id, name, description) VALUES
     (3, 'Fungicides', 'Chemicals for fungal disease control'),
     (4, 'Premium Rice', 'High-quality rice varieties'),
     (4, 'Regular Rice', 'Standard rice varieties');
-

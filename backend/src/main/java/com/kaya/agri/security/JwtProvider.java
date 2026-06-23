@@ -2,6 +2,7 @@ package com.kaya.agri.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import javax.crypto.SecretKey;
@@ -12,12 +13,18 @@ import java.util.Set;
 @ApplicationScoped
 public class JwtProvider {
 
-    private final SecretKey key = Keys.hmacShaKeyFor(
-        System.getenv().getOrDefault("JWT_SECRET", "kaya-agri-secret-key-change-in-production-32chars!")
-            .getBytes(StandardCharsets.UTF_8)
-    );
+    private SecretKey key;
 
     private final long expirationMs = 86400000L;
+
+    @PostConstruct
+    void init() {
+        String secret = System.getenv("JWT_SECRET");
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET environment variable is not set");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(String username, Set<String> roles) {
         Date now = new Date();

@@ -4,10 +4,13 @@ import com.kaya.agri.dto.PagedResponse;
 import com.kaya.agri.dto.ProductRequest;
 import com.kaya.agri.dto.ProductResponse;
 import com.kaya.agri.service.ProductService;
+import com.kaya.agri.security.RoleUtil;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 @Path("/products")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,7 +51,8 @@ public class ProductResource {
     }
 
     @POST
-    public Response create(ProductRequest request) {
+    public Response create(ProductRequest request, @Context SecurityContext ctx) {
+        RoleUtil.requireRole(ctx, "ADMIN", "MANAGER");
         try {
             ProductResponse created = productService.create(request);
             return Response.status(Response.Status.CREATED).entity(created).build();
@@ -61,7 +65,8 @@ public class ProductResource {
 
     @PUT
     @Path("/{id}")
-    public Response update(@PathParam("id") Integer id, ProductRequest request) {
+    public Response update(@PathParam("id") Integer id, ProductRequest request, @Context SecurityContext ctx) {
+        RoleUtil.requireRole(ctx, "ADMIN", "MANAGER");
         return productService.update(id, request)
             .map(Response::ok)
             .orElse(Response.status(Response.Status.NOT_FOUND))
@@ -70,7 +75,8 @@ public class ProductResource {
 
     @DELETE
     @Path("/{id}")
-    public Response delete(@PathParam("id") Integer id) {
+    public Response delete(@PathParam("id") Integer id, @Context SecurityContext ctx) {
+        RoleUtil.requireRole(ctx, "ADMIN", "MANAGER");
         if (productService.delete(id)) {
             return Response.noContent().build();
         }

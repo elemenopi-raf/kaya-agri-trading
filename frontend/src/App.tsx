@@ -14,6 +14,9 @@ import SupplierList from './pages/SupplierList'
 import SupplierForm from './pages/SupplierForm'
 import PurchaseOrderList from './pages/PurchaseOrderList'
 import PurchaseOrderDetail from './pages/PurchaseOrderDetail'
+import CustomerList from './pages/CustomerList'
+import SaleList from './pages/SaleList'
+import SaleDetail from './pages/SaleDetail'
 
 function App() {
   return (
@@ -31,13 +34,22 @@ function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="products" element={<ProductList />} />
-              <Route path="products/:id/edit" element={<ProductForm />} />
+              <Route path="products/:id/edit" element={
+                <ProtectedRoute roles={['ADMIN', 'MANAGER']}><ProductForm /></ProtectedRoute>
+              } />
               <Route path="stock-movements" element={<StockMovementList />} />
-              <Route path="stock-movements/new" element={<StockMovementForm />} />
+              <Route path="stock-movements/new" element={
+                <ProtectedRoute roles={['ADMIN', 'MANAGER']}><StockMovementForm /></ProtectedRoute>
+              } />
               <Route path="suppliers" element={<SupplierList />} />
-              <Route path="suppliers/:id/edit" element={<SupplierForm />} />
+              <Route path="suppliers/:id/edit" element={
+                <ProtectedRoute roles={['ADMIN', 'MANAGER']}><SupplierForm /></ProtectedRoute>
+              } />
               <Route path="purchase-orders" element={<PurchaseOrderList />} />
               <Route path="purchase-orders/:id" element={<PurchaseOrderDetail />} />
+              <Route path="customers" element={<CustomerList />} />
+              <Route path="sales" element={<SaleList />} />
+              <Route path="sales/:id" element={<SaleDetail />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -50,6 +62,10 @@ function App() {
         .ant-menu-dark { background: transparent !important; }
         .ant-menu-item:hover { background-color: rgba(255,255,255,0.15) !important; }
         .ant-menu-item-selected { background-color: rgba(255,255,255,0.25) !important; }
+        .table-striped tr:nth-child(even) td { background: #f8f9fa; }
+        .table-striped tr:hover td { background: #e6f4ff !important; }
+        .ant-table-thead > tr > th { background: #f0f5f0 !important; font-weight: 600 !important; }
+        .table-container { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 4px; }
       `}</style>
     </ConfigProvider>
   )

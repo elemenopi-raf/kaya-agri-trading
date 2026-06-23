@@ -98,7 +98,7 @@ function ProductCreateModal({ open, onClose }: Props) {
         </Form>
       </Modal>
       <Modal title="Success" open={open && success} closable={false} footer={
-        <Button type="primary" onClick={() => { onClose(); navigate('/products') }}>OK</Button>
+        <Button type="primary" onClick={() => { onClose(); navigate('/products', { state: { refresh: Date.now() } }) }}>OK</Button>
       }>
         <p>Product created successfully!</p>
       </Modal>

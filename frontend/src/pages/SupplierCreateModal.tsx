@@ -71,7 +71,7 @@ function SupplierCreateModal({ open, onClose }: Props) {
         </Form>
       </Modal>
       <Modal title="Success" open={open && success} closable={false} footer={
-        <Button type="primary" onClick={() => { onClose(); navigate('/suppliers') }}>OK</Button>
+        <Button type="primary" onClick={() => { onClose(); navigate('/suppliers', { state: { refresh: Date.now() } }) }}>OK</Button>
       }>
         <p>Supplier created successfully!</p>
       </Modal>

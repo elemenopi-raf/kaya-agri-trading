@@ -9,7 +9,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kaya -d kaya_agri"]
       interval: 10s
@@ -32,6 +32,7 @@ services:
       DB_NAME: kaya_agri
       DB_USER: kaya
       DB_PASSWORD: kaya_secret
+      JWT_SECRET: kaya-agri-local-dev-jwt-secret-32chars!!
 
   frontend:
     build:
