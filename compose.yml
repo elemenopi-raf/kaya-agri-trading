@@ -32,6 +32,7 @@ services:
       DB_NAME: kaya_agri
       DB_USER: kaya
       DB_PASSWORD: kaya_secret
+      JWT_SECRET: kaya-agri-local-dev-jwt-secret-32chars!!
 
   frontend:
     build:
