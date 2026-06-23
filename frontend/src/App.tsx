@@ -62,6 +62,10 @@ function App() {
         .ant-menu-dark { background: transparent !important; }
         .ant-menu-item:hover { background-color: rgba(255,255,255,0.15) !important; }
         .ant-menu-item-selected { background-color: rgba(255,255,255,0.25) !important; }
+        .table-striped tr:nth-child(even) td { background: #f8f9fa; }
+        .table-striped tr:hover td { background: #e6f4ff !important; }
+        .ant-table-thead > tr > th { background: #f0f5f0 !important; font-weight: 600 !important; }
+        .table-container { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 4px; }
       `}</style>
     </ConfigProvider>
   )

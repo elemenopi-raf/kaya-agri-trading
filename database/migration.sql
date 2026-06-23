@@ -36,6 +36,9 @@ SELECT u.id, r.id FROM users u, roles r
 WHERE u.username = 'cashier' AND r.name = 'CASHIER'
 AND NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id);
 
+-- Add version column for optimistic locking on products (for existing databases)
+ALTER TABLE products ADD COLUMN IF NOT EXISTS version BIGINT DEFAULT 0;
+
 -- Add customers table
 CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,

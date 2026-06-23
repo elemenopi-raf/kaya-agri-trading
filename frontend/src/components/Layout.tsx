@@ -42,10 +42,10 @@ function Layout() {
     <AntLayout style={{ minHeight: '100vh' }}>
       <Sider theme="dark" width={220} style={{ background: '#1e293b' }}>
         <div style={{ padding: '16px 24px', color: '#fff', fontSize: 18, fontWeight: 'bold' }}>
-          Kaya Agri
+          Kaya Agri Supply
         </div>
-        <div style={{ padding: '0 24px 16px', color: '#aaa', fontSize: 13 }}>
-          {user?.displayName} ({user?.roles?.join(', ')})
+        <div style={{ padding: '0 24px 16px', color: '#ccc', fontSize: 13 }}>
+          You are logged in as: <span style={{ color: '#a3d9a5' }}>{user?.displayName}</span>
         </div>
         <Menu
           theme="dark"

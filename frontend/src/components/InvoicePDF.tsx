@@ -66,9 +66,9 @@ interface Props {
 
 const BUSINESS = {
   name: 'Kaya Agri Trading',
-  address: '123 National Highway, Brgy. San Jose',
-  city: 'General Santos City, South Cotabato',
-  phone: '(083) 555-0123',
+  address: 'Zone 4, Labit Proper',
+  city: 'Urdaneta City, Pangasinan',
+  phone: '0995-073-0389',
   email: 'info@kayaagri.com',
 }
 

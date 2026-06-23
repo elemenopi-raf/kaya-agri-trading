@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Modal, Input, Button, Table } from 'antd'
+import { Modal, Input, Button, Table, Select } from 'antd'
 import api from '../services/api'
 import type { Product, Customer, PagedResponse } from '../types'
 
@@ -17,10 +17,9 @@ function SaleCreateModal({ open, onClose }: Props) {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [saleDate, setSaleDate] = useState('')
   const [notes, setNotes] = useState('')
-  const [items, setItems] = useState<{ productId: number; productName: string; quantity: string; unitPrice: string }[]>([])
+  const [items, setItems] = useState<{ productId: number; productName: string; quantity: string; unitPrice: string; currentStock: number }[]>([])
   const [productSearch, setProductSearch] = useState('')
   const [products, setProducts] = useState<Product[]>([])
-  const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -55,9 +54,8 @@ function SaleCreateModal({ open, onClose }: Props) {
 
   function addItem(p: Product) {
     if (items.some(i => i.productId === p.id)) return
-    setItems([...items, { productId: p.id, productName: p.name, quantity: '1', unitPrice: String(p.unitPrice || 0) }])
+    setItems([...items, { productId: p.id, productName: p.name, quantity: '1', unitPrice: String(p.unitPrice || 0), currentStock: p.currentStock }])
     setProductSearch('')
-    setShowProductDropdown(false)
   }
 
   function removeItem(idx: number) {
@@ -70,9 +68,22 @@ function SaleCreateModal({ open, onClose }: Props) {
     setItems(updated)
   }
 
+  function stockErrors(): string[] {
+    const errors: string[] = []
+    for (const item of items) {
+      const qty = parseFloat(item.quantity || '0')
+      if (qty > item.currentStock) {
+        errors.push(`${item.productName}: requested ${qty}, only ${item.currentStock} in stock`)
+      }
+    }
+    return errors
+  }
+
   async function handleSubmit() {
     setError('')
     if (items.length === 0) { setError('Add at least one item'); return }
+    const se = stockErrors()
+    if (se.length > 0) { setError('Insufficient stock:\n' + se.join('\n')); return }
 
     try {
       setSubmitting(true)
@@ -95,10 +106,18 @@ function SaleCreateModal({ open, onClose }: Props) {
 
   const itemColumns = [
     { title: 'Product', dataIndex: 'productName', key: 'productName' },
-    { title: 'Qty', key: 'quantity', render: (_: any, __: any, idx: number) => (
-      <Input type="number" step="0.01" min="0.01" value={items[idx]?.quantity}
-        onChange={e => updateItem(idx, 'quantity', e.target.value)} style={{ width: 80 }} />
-    )},
+    { title: 'Qty', key: 'quantity', render: (_: any, __: any, idx: number) => {
+      const item = items[idx]
+      const qty = parseFloat(item?.quantity || '0')
+      const exceeds = qty > item?.currentStock
+      return (
+        <div>
+          <Input type="number" step="0.01" min="0.01" value={item?.quantity}
+            onChange={e => updateItem(idx, 'quantity', e.target.value)} style={{ width: 80 }} />
+          {exceeds && <div style={{ color: 'red', fontSize: 11, lineHeight: '14px' }}>Only {item.currentStock} in stock</div>}
+        </div>
+      )
+    }},
     { title: 'Unit Price', key: 'unitPrice', render: (_: any, __: any, idx: number) => (
       <Input type="number" step="0.01" min="0" value={items[idx]?.unitPrice}
         onChange={e => updateItem(idx, 'unitPrice', e.target.value)} style={{ width: 100 }} />
@@ -151,34 +170,38 @@ function SaleCreateModal({ open, onClose }: Props) {
             <Input.TextArea value={notes} onChange={e => setNotes(e.target.value)} rows={2} />
           </div>
 
-          <div style={{ position: 'relative' }}>
+          <div>
             <label>Add Items</label>
-            <Input placeholder="Search product..." value={productSearch}
-              onChange={e => { setProductSearch(e.target.value); setShowProductDropdown(true) }}
-              onFocus={() => setShowProductDropdown(true)}
-              onBlur={() => setTimeout(() => setShowProductDropdown(false), 200)} />
-            {showProductDropdown && products.length > 0 && (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #d9d9d9', zIndex: 10, maxHeight: 200, overflowY: 'auto' }}>
-                {products.map(p => (
-                  <div key={p.id} onMouseDown={() => addItem(p)}
-                    style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0' }}>
-                    {p.name} <span style={{ color: '#999' }}>(stock: {p.currentStock} {p.unitOfMeasureAbbr})</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <Select showSearch placeholder="Search product..." filterOption={false}
+              onSearch={v => setProductSearch(v)}
+              onSelect={(_, option) => {
+                const p = products.find(p => p.id === Number((option as any).value))
+                if (p) addItem(p)
+              }}
+              notFoundContent={null}
+              value={undefined}
+              options={products.map(p => ({
+                label: `${p.name} (stock: ${p.currentStock} ${p.unitOfMeasureAbbr})`,
+                value: p.id,
+              }))}
+              style={{ width: '100%' }} />
           </div>
 
           {items.length > 0 && (
             <>
               <Table dataSource={items.map((item, idx) => ({ ...item, key: idx }))} columns={itemColumns} pagination={false} size="small" />
-              <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: 16 }}>
-                Total: {total.toFixed(2)}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {stockErrors().length > 0 && (
+                  <span style={{ color: 'red', fontSize: 13 }}>⚠ Some items exceed available stock</span>
+                )}
+                <div style={{ fontWeight: 'bold', fontSize: 16, marginLeft: 'auto' }}>
+                  Total: {total.toFixed(2)}
+                </div>
               </div>
             </>
           )}
 
-          {error && <p style={{ color: 'red', margin: 0 }}>{error}</p>}
+          {error && <p style={{ color: 'red', margin: 0, whiteSpace: 'pre-line' }}>{error}</p>}
         </div>
       </Modal>
       <Modal title="Success" open={open && success} closable={false} footer={

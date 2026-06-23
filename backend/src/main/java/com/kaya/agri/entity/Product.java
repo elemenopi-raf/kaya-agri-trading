@@ -40,6 +40,9 @@ public class Product {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Version
+    private Long version;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -77,6 +80,8 @@ public class Product {
     public void setCurrentStock(BigDecimal currentStock) { this.currentStock = currentStock; }
     public Boolean getActive() { return active; }
     public void setActive(Boolean active) { this.active = active; }
+    public Long getVersion() { return version; }
+    public void setVersion(Long version) { this.version = version; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

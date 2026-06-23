@@ -56,6 +56,7 @@ CREATE TABLE products (
     reorder_level DECIMAL(12,2) DEFAULT 0,
     current_stock DECIMAL(12,2) DEFAULT 0,
     active BOOLEAN DEFAULT TRUE,
+    version BIGINT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { Table, Select, Input, Button, Typography, Tag } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { useLocation } from 'react-router-dom'
+import { Table, Select, Input, Button, Typography, Tag, Modal, message } from 'antd'
+import { PlusOutlined, DeleteOutlined, EditOutlined, CloseOutlined } from '@ant-design/icons'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import type { Product, PagedResponse, Category } from '../types'
 import ProductCreateModal from './ProductCreateModal'
+import ProductViewModal from './ProductViewModal'
+import ProductEditModal from './ProductEditModal'
 
 function ProductList() {
-  const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
   const canWrite = user?.roles?.some(r => r === 'ADMIN' || r === 'MANAGER')
@@ -22,6 +23,11 @@ function ProductList() {
   const [subcategoryId, setSubcategoryId] = useState<number | undefined>()
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+  const [viewModalOpen, setViewModalOpen] = useState(false)
+  const [viewingProduct, setViewingProduct] = useState<Product | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     api.get<Category[]>('/categories').then(setCategories).catch(() => {})
@@ -45,7 +51,7 @@ function ProductList() {
     if (categoryId) params.set('categoryId', String(categoryId))
     if (subcategoryId) params.set('subcategoryId', String(subcategoryId))
     params.set('page', String(page - 1))
-    params.set('pageSize', '20')
+    params.set('pageSize', '10')
     api.get<PagedResponse<Product>>(`/products?${params}`)
       .then(data => { setProducts(data.items); setTotal(data.totalCount) })
       .catch(() => {})
@@ -53,6 +59,54 @@ function ProductList() {
   }
 
   useEffect(() => { fetch() }, [search, categoryId, subcategoryId, page, location.state?.refresh])
+
+  function handleView(product: Product) {
+    setViewingProduct(product)
+    setViewModalOpen(true)
+  }
+
+  function handleEdit(product: Product) {
+    setEditingProduct(product)
+    setEditModalOpen(true)
+  }
+
+  function handleDelete(product: Product) {
+    Modal.confirm({
+      title: 'Delete Product',
+      content: `Are you sure you want to delete "${product.name}"?`,
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await api.delete(`/products/${product.id}`)
+          message.success('Product deleted')
+          fetch()
+        } catch (err: any) {
+          message.error(err.message || 'Failed to delete product')
+        }
+      },
+    })
+  }
+
+  function handleBulkDelete() {
+    const selected = products.filter(p => selectedRowKeys.includes(p.id))
+    Modal.confirm({
+      title: 'Delete Products',
+      content: `Are you sure you want to delete ${selected.length} product(s)?`,
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          for (const p of selected) {
+            await api.delete(`/products/${p.id}`)
+          }
+          message.success(`${selected.length} product(s) deleted`)
+          setSelectedRowKeys([])
+          fetch()
+        } catch (err: any) {
+          message.error(err.message || 'Failed to delete products')
+        }
+      },
+    })
+  }
 
   const columns = [
     { title: 'Name', dataIndex: 'name', key: 'name' },
@@ -74,6 +128,11 @@ function ProductList() {
     },
   ]
 
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -94,10 +153,35 @@ function ProductList() {
           options={subcategories.map(s => ({ label: s.name, value: s.id }))} />
       </div>
 
-      <Table dataSource={products} columns={columns} rowKey="id" loading={loading}
-        pagination={{ current: page, pageSize: 20, total, onChange: p => setPage(p) }}
-        onRow={r => ({ onClick: () => navigate(`/products/${r.id}/edit`), style: { cursor: 'pointer' } })} />
+      {selectedRowKeys.length > 0 && (
+        <div style={{ marginBottom: 16, padding: '8px 12px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontWeight: 500 }}>{selectedRowKeys.length} selected</span>
+          {canWrite && selectedRowKeys.length === 1 && (
+            <Button size="small" type="primary" icon={<EditOutlined />} onClick={() => {
+              const p = products.find(p => p.id === selectedRowKeys[0])
+              if (p) handleEdit(p)
+            }}>Edit</Button>
+          )}
+          {canWrite && (
+            <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBulkDelete}>Delete ({selectedRowKeys.length})</Button>
+          )}
+          <Button size="small" icon={<CloseOutlined />} onClick={() => setSelectedRowKeys([])}>Clear</Button>
+        </div>
+      )}
+
+      <div className="table-container">
+        <Table dataSource={products} columns={columns} rowKey="id" loading={loading} rowSelection={rowSelection} rowClassName="table-striped"
+          pagination={{ current: page, pageSize: 10, total, onChange: p => setPage(p), showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`, showSizeChanger: false }}
+          onRow={r => ({ onClick: () => handleView(r), style: { cursor: 'pointer' } })} />
+      </div>
       <ProductCreateModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <ProductViewModal product={viewingProduct} open={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        onEdit={handleEdit}
+        onDelete={handleDelete} />
+      <ProductEditModal product={editingProduct} open={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setEditingProduct(null) }}
+        onSuccess={fetch} />
     </div>
   )
 }
