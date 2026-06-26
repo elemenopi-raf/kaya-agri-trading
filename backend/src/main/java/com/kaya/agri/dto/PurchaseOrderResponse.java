@@ -1,7 +1,6 @@
 package com.kaya.agri.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,8 +10,8 @@ public class PurchaseOrderResponse {
     private Integer supplierId;
     private String supplierName;
     private String status;
-    private LocalDate orderDate;
-    private LocalDate expectedDate;
+    private LocalDateTime orderDate;
+    private LocalDateTime expectedDate;
     private String notes;
     private String createdBy;
     private LocalDateTime createdAt;
@@ -22,7 +21,7 @@ public class PurchaseOrderResponse {
     public PurchaseOrderResponse() {}
 
     public PurchaseOrderResponse(Integer id, String poNumber, Integer supplierId, String supplierName,
-                                  String status, LocalDate orderDate, LocalDate expectedDate,
+                                  String status, LocalDateTime orderDate, LocalDateTime expectedDate,
                                   String notes, String createdBy, LocalDateTime createdAt,
                                   LocalDateTime updatedAt, List<PurchaseOrderItemResponse> items) {
         this.id = id;
@@ -44,8 +43,8 @@ public class PurchaseOrderResponse {
     public Integer getSupplierId() { return supplierId; }
     public String getSupplierName() { return supplierName; }
     public String getStatus() { return status; }
-    public LocalDate getOrderDate() { return orderDate; }
-    public LocalDate getExpectedDate() { return expectedDate; }
+    public LocalDateTime getOrderDate() { return orderDate; }
+    public LocalDateTime getExpectedDate() { return expectedDate; }
     public String getNotes() { return notes; }
     public String getCreatedBy() { return createdBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }

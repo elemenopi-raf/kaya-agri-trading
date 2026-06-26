@@ -5,9 +5,11 @@ import com.kaya.agri.entity.*;
 import com.kaya.agri.repository.PurchaseOrderRepository;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -18,10 +20,13 @@ public class PurchaseOrderService {
     @Inject
     private PurchaseOrderRepository repository;
 
-    public PagedResponse<PurchaseOrderResponse> list(String status, Integer supplierId,
+    @PersistenceContext
+    private EntityManager em;
+
+    public PagedResponse<PurchaseOrderResponse> list(String status, Integer supplierId, String search,
                                                       int page, int pageSize) {
-        List<PurchaseOrder> list = repository.findAll(status, supplierId, page, pageSize);
-        long total = repository.count(status, supplierId);
+        List<PurchaseOrder> list = repository.findAll(status, supplierId, search, page, pageSize);
+        long total = repository.count(status, supplierId, search);
         return new PagedResponse<>(
             list.stream().map(this::toResponse).collect(Collectors.toList()),
             total, page, pageSize);
@@ -43,8 +48,8 @@ public class PurchaseOrderService {
         po.setPoNumber(generatePoNumber());
         po.setSupplier(supplier);
         po.setStatus("PENDING");
-        po.setOrderDate(request.getOrderDate() != null ? LocalDate.parse(request.getOrderDate()) : LocalDate.now());
-        po.setExpectedDate(request.getExpectedDate() != null ? LocalDate.parse(request.getExpectedDate()) : null);
+        po.setOrderDate(request.getOrderDate() != null ? LocalDateTime.parse(request.getOrderDate()) : LocalDateTime.now());
+        po.setExpectedDate(request.getExpectedDate() != null ? LocalDateTime.parse(request.getExpectedDate()) : null);
         po.setNotes(request.getNotes());
         po.setCreatedBy(user);
 
@@ -85,6 +90,16 @@ public class PurchaseOrderService {
                         Product p = item.getProduct();
                         BigDecimal qty = item.getQtyOrdered();
                         p.setCurrentStock(p.getCurrentStock().add(qty));
+
+                        StockMovement sm = new StockMovement();
+                        sm.setProduct(p);
+                        sm.setMovementType("IN");
+                        sm.setQuantity(qty);
+                        sm.setReferenceType("PURCHASE_ORDER");
+                        sm.setReferenceId(po.getId());
+                        sm.setNotes("PO " + po.getPoNumber() + " received");
+                        sm.setCreatedBy(user);
+                        em.persist(sm);
                     }
                     break;
                 case "CANCELLED":

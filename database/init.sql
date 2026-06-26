@@ -100,8 +100,8 @@ CREATE TABLE purchase_orders (
     po_number VARCHAR(50) NOT NULL UNIQUE,
     supplier_id INTEGER NOT NULL REFERENCES suppliers(id),
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'APPROVED', 'RECEIVED', 'CANCELLED')),
-    order_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    expected_date DATE,
+    order_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expected_date TIMESTAMP,
     notes TEXT,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -134,11 +134,12 @@ CREATE TABLE stock_movements (
 CREATE TABLE sales (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER REFERENCES customers(id),
-    sale_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    sale_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
     paid_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'CANCELLED')),
     notes TEXT,
+    cancel_reason TEXT,
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -164,7 +165,7 @@ CREATE TABLE payments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-INSERT INTO roles (name) VALUES ('ADMIN'), ('MANAGER'), ('CLERK'), ('CASHIER'), ('VIEWER');
+INSERT INTO roles (name) VALUES ('ADMIN'), ('MANAGER'), ('CASHIER');
 
 INSERT INTO unit_of_measures (name, abbreviation) VALUES
     ('Kilogram', 'kg'),

@@ -97,7 +97,7 @@ function InvoicePDF({ sale }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Customer</Text>
           <View style={styles.row}><Text style={styles.label}>Name:</Text><Text style={styles.value}>{sale.customerName}</Text></View>
-          <View style={styles.row}><Text style={styles.label}>Date:</Text><Text style={styles.value}>{sale.saleDate}</Text></View>
+          <View style={styles.row}><Text style={styles.label}>Date:</Text><Text style={styles.value}>{sale.saleDate ? new Date(sale.saleDate).toLocaleDateString() : '-'}</Text></View>
           <View style={styles.row}><Text style={styles.label}>Status:</Text><Text style={styles.value}>{sale.status}</Text></View>
         </View>
 

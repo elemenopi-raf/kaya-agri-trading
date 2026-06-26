@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
+import java.util.Map;
 import java.util.Set;
 
 @Provider
@@ -16,7 +17,7 @@ import java.util.Set;
 public class JwtAuthFilter implements ContainerRequestFilter {
 
     private static final Set<String> PUBLIC_PREFIXES = Set.of(
-        "auth/login", "health", "admin/re-seed"
+        "auth/login", "health"
     );
 
     @Inject
@@ -34,7 +35,7 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("{\"error\":\"unauthorized\"}")
+                    .entity(Map.of("error", "unauthorized"))
                     .build()
             );
             return;
@@ -51,7 +52,7 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         } catch (Exception e) {
             requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("{\"error\":\"invalid or expired token\"}")
+                    .entity(Map.of("error", "invalid or expired token"))
                     .build()
             );
         }

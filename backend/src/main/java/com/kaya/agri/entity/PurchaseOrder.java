@@ -1,7 +1,6 @@
 package com.kaya.agri.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +23,10 @@ public class PurchaseOrder {
     private String status = "PENDING";
 
     @Column(name = "order_date", nullable = false)
-    private LocalDate orderDate;
+    private LocalDateTime orderDate;
 
     @Column(name = "expected_date")
-    private LocalDate expectedDate;
+    private LocalDateTime expectedDate;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -64,10 +63,10 @@ public class PurchaseOrder {
     public void setSupplier(Supplier supplier) { this.supplier = supplier; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public LocalDate getOrderDate() { return orderDate; }
-    public void setOrderDate(LocalDate orderDate) { this.orderDate = orderDate; }
-    public LocalDate getExpectedDate() { return expectedDate; }
-    public void setExpectedDate(LocalDate expectedDate) { this.expectedDate = expectedDate; }
+    public LocalDateTime getOrderDate() { return orderDate; }
+    public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
+    public LocalDateTime getExpectedDate() { return expectedDate; }
+    public void setExpectedDate(LocalDateTime expectedDate) { this.expectedDate = expectedDate; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public User getCreatedBy() { return createdBy; }

@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.List;
 import java.util.Set;
 
 @Stateless
@@ -21,16 +22,16 @@ public class SeedService {
     public void seed() {
         seedRole("ADMIN");
         seedRole("MANAGER");
-        seedRole("CLERK");
         seedRole("CASHIER");
-        seedRole("VIEWER");
 
         seedOrUpdateUser("admin", "admin123", "Admin User", "admin@kaya.com",
-            Set.of("ADMIN", "MANAGER", "CLERK", "CASHIER", "VIEWER"));
+            Set.of("ADMIN", "MANAGER", "CASHIER"));
         seedOrUpdateUser("manager", "manager123", "Manager User", "manager@kaya.com",
-            Set.of("MANAGER", "CLERK"));
+            Set.of("MANAGER"));
         seedOrUpdateUser("cashier", "cashier123", "Cashier User", "cashier@kaya.com",
             Set.of("CASHIER"));
+
+        removeObsoleteRoles();
     }
 
     private void seedRole(String name) {
@@ -41,6 +42,18 @@ public class SeedService {
             Role role = new Role();
             role.setName(name);
             em.persist(role);
+        }
+    }
+
+    private void removeObsoleteRoles() {
+        for (String obsolete : List.of("CLERK", "VIEWER")) {
+            try {
+                Role role = em.createQuery("SELECT r FROM Role r WHERE r.name = :name", Role.class)
+                    .setParameter("name", obsolete).getSingleResult();
+                em.createNativeQuery("DELETE FROM user_roles WHERE role_id = ?1")
+                    .setParameter(1, role.getId()).executeUpdate();
+                em.remove(role);
+            } catch (jakarta.persistence.NoResultException ignored) {}
         }
     }
 

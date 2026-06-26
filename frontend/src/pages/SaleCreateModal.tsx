@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Modal, Input, Button, Table, Select } from 'antd'
+import { Modal, Input, Button, Table, Select, message } from 'antd'
 import api from '../services/api'
 import type { Product, Customer, PagedResponse } from '../types'
 
@@ -20,7 +20,6 @@ function SaleCreateModal({ open, onClose }: Props) {
   const [items, setItems] = useState<{ productId: number; productName: string; quantity: string; unitPrice: string; currentStock: number }[]>([])
   const [productSearch, setProductSearch] = useState('')
   const [products, setProducts] = useState<Product[]>([])
-  const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -31,7 +30,6 @@ function SaleCreateModal({ open, onClose }: Props) {
       setSaleDate('')
       setNotes('')
       setItems([])
-      setError('')
       setSuccess(false)
     }
   }, [open])
@@ -80,10 +78,9 @@ function SaleCreateModal({ open, onClose }: Props) {
   }
 
   async function handleSubmit() {
-    setError('')
-    if (items.length === 0) { setError('Add at least one item'); return }
+    if (items.length === 0) { message.error('Add at least one item'); return }
     const se = stockErrors()
-    if (se.length > 0) { setError('Insufficient stock:\n' + se.join('\n')); return }
+    if (se.length > 0) { message.error('Insufficient stock:\n' + se.join('\n')); return }
 
     try {
       setSubmitting(true)
@@ -96,7 +93,7 @@ function SaleCreateModal({ open, onClose }: Props) {
       await api.post('/sales', body)
       setSuccess(true)
     } catch (err: any) {
-      setError(err.message || 'Failed to create sale')
+      message.error(err.message || 'Failed to create sale')
     } finally {
       setSubmitting(false)
     }
@@ -110,18 +107,25 @@ function SaleCreateModal({ open, onClose }: Props) {
       const item = items[idx]
       const qty = parseFloat(item?.quantity || '0')
       const exceeds = qty > item?.currentStock
+      const invalid = qty <= 0
       return (
         <div>
           <Input type="number" step="0.01" min="0.01" value={item?.quantity}
+            status={invalid || exceeds ? 'error' : undefined}
             onChange={e => updateItem(idx, 'quantity', e.target.value)} style={{ width: 80 }} />
           {exceeds && <div style={{ color: 'red', fontSize: 11, lineHeight: '14px' }}>Only {item.currentStock} in stock</div>}
+          {invalid && <div style={{ color: 'red', fontSize: 11 }}>Must be positive</div>}
         </div>
       )
     }},
-    { title: 'Unit Price', key: 'unitPrice', render: (_: any, __: any, idx: number) => (
-      <Input type="number" step="0.01" min="0" value={items[idx]?.unitPrice}
-        onChange={e => updateItem(idx, 'unitPrice', e.target.value)} style={{ width: 100 }} />
-    )},
+    { title: 'Unit Price', key: 'unitPrice', render: (_: any, __: any, idx: number) => {
+      const price = parseFloat(items[idx]?.unitPrice || '0')
+      return (
+        <Input type="number" step="0.01" min="0" value={items[idx]?.unitPrice}
+          status={price < 0 ? 'error' : undefined}
+          onChange={e => updateItem(idx, 'unitPrice', e.target.value)} style={{ width: 100 }} />
+      )
+    }},
     { title: 'Total', key: 'total', render: (_: any, __: any, idx: number) => {
       const item = items[idx]
       return (parseFloat(item?.quantity || '0') * parseFloat(item?.unitPrice || '0')).toFixed(2)
@@ -163,7 +167,7 @@ function SaleCreateModal({ open, onClose }: Props) {
           </div>
           <div>
             <label>Sale Date</label>
-            <Input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
+            <Input type="datetime-local" value={saleDate} onChange={e => setSaleDate(e.target.value)} />
           </div>
           <div>
             <label>Notes</label>
@@ -201,7 +205,6 @@ function SaleCreateModal({ open, onClose }: Props) {
             </>
           )}
 
-          {error && <p style={{ color: 'red', margin: 0, whiteSpace: 'pre-line' }}>{error}</p>}
         </div>
       </Modal>
       <Modal title="Success" open={open && success} closable={false} footer={

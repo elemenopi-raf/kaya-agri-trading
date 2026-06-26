@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Descriptions, Table, Tag, Button, Typography, Spin, Modal, Divider, message } from 'antd'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { Descriptions, Table, Tag, Button, Typography, Modal, Divider, Skeleton, Alert } from 'antd'
 import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer'
+import dayjs from 'dayjs'
 import api from '../services/api'
 import type { Sale } from '../types'
 import InvoicePDF from '../components/InvoicePDF'
 import AddPaymentModal from './AddPaymentModal'
+import ReturnModal from './ReturnModal'
+import SaleCancelModal from './SaleCancelModal'
 
 const statusColors: Record<string, string> = {
-  PENDING: 'orange', COMPLETED: 'green', CANCELLED: 'red',
+  PENDING: '#d97706', COMPLETED: 'green', CANCELLED: 'red',
 }
 
 const paymentMethodColors: Record<string, string> = {
@@ -18,37 +21,32 @@ const paymentMethodColors: Record<string, string> = {
 function SaleDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [sale, setSale] = useState<Sale | null>(null)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
+  const [returnModalOpen, setReturnModalOpen] = useState(false)
+  const [cancelModalOpen, setCancelModalOpen] = useState(false)
 
   useEffect(() => {
     if (id) api.get<Sale>(`/sales/${id}`).then(setSale).catch(() => navigate('/sales'))
   }, [id])
+
+  useEffect(() => {
+    if (sale && location.state?.openInvoice) setInvoiceModalOpen(true)
+    if (sale && location.state?.openReturn) setReturnModalOpen(true)
+  }, [sale, location.state])
 
   function addPayment(updated: Sale) {
     setSale(updated)
     setPaymentModalOpen(false)
   }
 
-  async function handleCancel() {
-    Modal.confirm({
-      title: 'Cancel Sale',
-      content: 'This will reverse stock quantities. Continue?',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          const updated = await api.put<Sale>(`/sales/${id}/cancel`, {})
-          setSale(updated)
-          message.success('Sale cancelled')
-        } catch (err: any) {
-          message.error(err.message || 'Failed to cancel')
-        }
-      },
-    })
+  function handleCancel() {
+    setCancelModalOpen(true)
   }
 
-  if (!sale) return <Spin style={{ display: 'block', marginTop: 48 }} />
+  if (!sale) return <div style={{ padding: 24 }}><Skeleton active paragraph={{ rows: 4 }} /></div>
 
   const itemColumns = [
     { title: 'Product', dataIndex: 'productName', key: 'productName' },
@@ -81,7 +79,7 @@ function SaleDetail() {
         <Descriptions.Item label="Status">
           <Tag color={statusColors[sale.status]}>{sale.status}</Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="Date">{sale.saleDate}</Descriptions.Item>
+        <Descriptions.Item label="Date">{sale.saleDate ? dayjs(sale.saleDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
         <Descriptions.Item label="Total Amount">{sale.totalAmount.toFixed(2)}</Descriptions.Item>
         <Descriptions.Item label="Paid Amount">{sale.paidAmount.toFixed(2)}</Descriptions.Item>
         <Descriptions.Item label="Balance">{(sale.totalAmount - sale.paidAmount).toFixed(2)}</Descriptions.Item>
@@ -89,6 +87,11 @@ function SaleDetail() {
       </Descriptions>
 
       {sale.notes && <Typography.Paragraph><strong>Notes:</strong> {sale.notes}</Typography.Paragraph>}
+
+      {sale.status === 'CANCELLED' && sale.cancelReason && (
+        <Alert type="error" showIcon style={{ marginBottom: 16 }}
+          message="Cancel Reason" description={sale.cancelReason} />
+      )}
 
       <Typography.Title level={5}>Items</Typography.Title>
       <Table dataSource={sale.items} columns={itemColumns} rowKey="id" pagination={false} size="small"
@@ -125,13 +128,19 @@ function SaleDetail() {
           </>
         )}
         {sale.status === 'COMPLETED' && (
-          <Button type="primary" onClick={() => setInvoiceModalOpen(true)}>Invoice</Button>
+          <>
+            <Button type="primary" onClick={() => setInvoiceModalOpen(true)}>Invoice</Button>
+            <Button onClick={() => setReturnModalOpen(true)}>Return Items</Button>
+          </>
         )}
         <Button onClick={() => navigate('/sales')}>Back to List</Button>
       </div>
 
       <AddPaymentModal open={paymentModalOpen} saleId={sale.id} onSuccess={addPayment}
         onClose={() => setPaymentModalOpen(false)} />
+      <ReturnModal sale={sale} open={returnModalOpen}
+        onSuccess={updated => { setSale(updated); setReturnModalOpen(false) }}
+        onClose={() => setReturnModalOpen(false)} />
       <Modal title="Invoice" open={invoiceModalOpen} onCancel={() => setInvoiceModalOpen(false)}
         width={800} footer={
           <PDFDownloadLink document={<InvoicePDF sale={sale} />} fileName={`invoice-${sale.id}.pdf`}>
@@ -144,6 +153,9 @@ function SaleDetail() {
           </PDFViewer>
         </div>
       </Modal>
+      <SaleCancelModal saleId={sale.id} open={cancelModalOpen}
+        onSuccess={() => { setCancelModalOpen(false); api.get<Sale>(`/sales/${id}`).then(setSale) }}
+        onClose={() => setCancelModalOpen(false)} />
     </div>
   )
 }

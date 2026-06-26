@@ -15,29 +15,33 @@ public class PurchaseOrderRepository {
     @PersistenceContext
     private EntityManager em;
 
-    public List<PurchaseOrder> findAll(String status, Integer supplierId, int page, int pageSize) {
+    public List<PurchaseOrder> findAll(String status, Integer supplierId, String search, int page, int pageSize) {
         StringBuilder jpql = new StringBuilder(
             "SELECT DISTINCT po FROM PurchaseOrder po JOIN FETCH po.supplier s LEFT JOIN FETCH po.createdBy LEFT JOIN FETCH po.items WHERE 1=1");
         if (status != null && !status.isBlank()) jpql.append(" AND po.status = :status");
         if (supplierId != null) jpql.append(" AND s.id = :supplierId");
+        if (search != null && !search.isBlank()) jpql.append(" AND (LOWER(po.poNumber) LIKE :search OR LOWER(s.name) LIKE :search)");
         jpql.append(" ORDER BY po.createdAt DESC");
 
         TypedQuery<PurchaseOrder> query = em.createQuery(jpql.toString(), PurchaseOrder.class);
         if (status != null && !status.isBlank()) query.setParameter("status", status.toUpperCase());
         if (supplierId != null) query.setParameter("supplierId", supplierId);
+        if (search != null && !search.isBlank()) query.setParameter("search", "%" + search.toLowerCase() + "%");
         query.setFirstResult(page * pageSize);
         query.setMaxResults(pageSize);
         return query.getResultList();
     }
 
-    public long count(String status, Integer supplierId) {
+    public long count(String status, Integer supplierId, String search) {
         StringBuilder jpql = new StringBuilder("SELECT COUNT(po) FROM PurchaseOrder po WHERE 1=1");
         if (status != null && !status.isBlank()) jpql.append(" AND po.status = :status");
         if (supplierId != null) jpql.append(" AND po.supplier.id = :supplierId");
+        if (search != null && !search.isBlank()) jpql.append(" AND (LOWER(po.poNumber) LIKE :search OR LOWER(po.supplier.name) LIKE :search)");
 
         TypedQuery<Long> query = em.createQuery(jpql.toString(), Long.class);
         if (status != null && !status.isBlank()) query.setParameter("status", status.toUpperCase());
         if (supplierId != null) query.setParameter("supplierId", supplierId);
+        if (search != null && !search.isBlank()) query.setParameter("search", "%" + search.toLowerCase() + "%");
         return query.getSingleResult();
     }
 

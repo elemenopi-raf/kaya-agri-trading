@@ -143,11 +143,22 @@ export interface StockMovementRequest {
 }
 
 export interface User {
-  id?: number
+  id: number
   username: string
   displayName: string
   email?: string
+  active: boolean
   roles: string[]
+  createdAt: string
+}
+
+export interface UserRequest {
+  username: string
+  displayName: string
+  email?: string
+  password?: string
+  roles: string[]
+  active?: boolean
 }
 
 export interface UnitOfMeasure {
@@ -182,6 +193,7 @@ export interface Sale {
   paidAmount: number
   status: 'PENDING' | 'COMPLETED' | 'CANCELLED'
   notes?: string
+  cancelReason?: string
   createdBy?: string
   createdAt: string
   updatedAt: string
@@ -215,4 +227,27 @@ export interface SaleItemRequest {
   productId: number
   quantity: string
   unitPrice: string
+}
+
+export interface DashboardResponse {
+  todaySalesTotal: number
+  todayCompletedSales: number
+  todayPendingSales: number
+  todaySalesCount: number
+  pendingPOCount: number
+  lowStockCount: number
+  totalProducts: number
+  recentSales: Sale[]
+}
+
+export interface SalesTrendPoint {
+  date: string
+  total: number
+}
+
+export interface TopProduct {
+  productId: number
+  productName: string
+  totalQty: number
+  totalRevenue: number
 }
