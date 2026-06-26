@@ -17,6 +17,7 @@ import PurchaseOrderDetail from './pages/PurchaseOrderDetail'
 import CustomerList from './pages/CustomerList'
 import SaleList from './pages/SaleList'
 import SaleDetail from './pages/SaleDetail'
+import UserList from './pages/UserList'
 
 function App() {
   return (
@@ -48,6 +49,9 @@ function App() {
               <Route path="purchase-orders" element={<PurchaseOrderList />} />
               <Route path="purchase-orders/:id" element={<PurchaseOrderDetail />} />
               <Route path="customers" element={<CustomerList />} />
+              <Route path="users" element={
+                <ProtectedRoute roles={['ADMIN']}><UserList /></ProtectedRoute>
+              } />
               <Route path="sales" element={<SaleList />} />
               <Route path="sales/:id" element={<SaleDetail />} />
             </Route>
@@ -56,15 +60,20 @@ function App() {
         </ErrorBoundary>
       </AuthProvider>
       <style>{`
-        .ant-card-hoverable:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .ant-card { box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: box-shadow 0.2s; }
+        .ant-card-hoverable:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important; }
         .ant-card-bordered { border-color: #e8e8e8 !important; }
-        .ant-layout-sider-dark .ant-layout-sider-children { background: inherit !important; }
+        .ant-layout-sider-dark .ant-layout-sider-children { background: inherit !important; display: flex; flex-direction: column; }
         .ant-menu-dark { background: transparent !important; }
         .ant-menu-item:hover { background-color: rgba(255,255,255,0.15) !important; }
-        .ant-menu-item-selected { background-color: rgba(255,255,255,0.25) !important; }
-        .table-striped tr:nth-child(even) td { background: #f8f9fa; }
-        .table-striped tr:hover td { background: #e6f4ff !important; }
-        .ant-table-thead > tr > th { background: #f0f5f0 !important; font-weight: 600 !important; }
+        .ant-menu-item-selected { background-color: rgba(255,255,255,0.12) !important; border-left: 3px solid #F4C430; padding-left: 21px !important; }
+        .ant-statistic-content-secondary { color: rgba(0,0,0,0.65) !important; }
+        .ant-table-wrapper .ant-table { border-radius: 8px; }
+        .table-striped tr:nth-child(even) td { background: #f9fafb; }
+        .table-striped tr:hover td { background: #eef5ee !important; transition: background 0.2s; }
+        .table-striped tr td { transition: background 0.2s; }
+        .ant-table-thead > tr > th { background: #edf2ed !important; font-weight: 600 !important; }
         .table-container { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 8px; padding: 4px; }
       `}</style>
     </ConfigProvider>

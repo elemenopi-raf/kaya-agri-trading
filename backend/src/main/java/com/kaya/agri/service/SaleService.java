@@ -5,12 +5,13 @@ import com.kaya.agri.entity.*;
 import com.kaya.agri.repository.SaleRepository;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
-
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Stateless
@@ -19,9 +20,12 @@ public class SaleService {
     @Inject
     private SaleRepository repository;
 
-    public PagedResponse<SaleResponse> list(Integer customerId, String status, int page, int pageSize) {
-        List<Sale> list = repository.findAll(customerId, status, page, pageSize);
-        long total = repository.count(customerId, status);
+    @PersistenceContext
+    private EntityManager em;
+
+    public PagedResponse<SaleResponse> list(Integer customerId, String status, LocalDate from, LocalDate to, String search, int page, int pageSize) {
+        List<Sale> list = repository.findAll(customerId, status, from, to, search, page, pageSize);
+        long total = repository.count(customerId, status, from, to, search);
         return new PagedResponse<>(
             list.stream().map(this::toResponse).collect(Collectors.toList()),
             total, page, pageSize);
@@ -38,7 +42,7 @@ public class SaleService {
         User user = repository.findUserByUsername(username);
 
         Sale sale = new Sale();
-        sale.setSaleDate(request.getSaleDate() != null ? LocalDate.parse(request.getSaleDate()) : LocalDate.now());
+        sale.setSaleDate(request.getSaleDate() != null ? LocalDateTime.parse(request.getSaleDate()) : LocalDateTime.now());
         sale.setNotes(request.getNotes());
         sale.setStatus("PENDING");
         sale.setCreatedBy(user);
@@ -79,6 +83,16 @@ public class SaleService {
         for (SaleItem item : sale.getItems()) {
             Product p = item.getProduct();
             p.setCurrentStock(p.getCurrentStock().subtract(item.getQuantity()));
+
+            StockMovement sm = new StockMovement();
+            sm.setProduct(p);
+            sm.setMovementType("OUT");
+            sm.setQuantity(item.getQuantity());
+            sm.setReferenceType("SALE");
+            sm.setReferenceId(sale.getId());
+            sm.setNotes("Sale #" + sale.getId() + " created");
+            sm.setCreatedBy(user);
+            em.persist(sm);
         }
 
         return toResponse(sale);
@@ -118,17 +132,75 @@ public class SaleService {
         });
     }
 
-    public Optional<SaleResponse> cancel(Integer id) {
+    public SaleResponse returnItems(Integer saleId, ReturnRequest request, String username) {
+        Sale sale = repository.findById(saleId)
+            .orElseThrow(() -> new IllegalArgumentException("Sale not found"));
+
+        if (!"COMPLETED".equals(sale.getStatus()))
+            throw new IllegalStateException("Can only return items from a completed sale");
+
+        User user = repository.findUserByUsername(username);
+
+        Map<Integer, BigDecimal> originalQtys = sale.getItems().stream()
+            .collect(Collectors.toMap(
+                i -> i.getProduct().getId(),
+                SaleItem::getQuantity,
+                BigDecimal::add));
+
+        for (ReturnItemRequest itemReq : request.getItems()) {
+            BigDecimal returnQty = parseDecimal(itemReq.getQuantity());
+            if (returnQty.compareTo(BigDecimal.ZERO) <= 0)
+                throw new IllegalArgumentException("Return quantity must be positive");
+
+            BigDecimal originalQty = originalQtys.get(itemReq.getProductId());
+            if (originalQty == null)
+                throw new IllegalArgumentException("Product not found in sale");
+            if (returnQty.compareTo(originalQty) > 0)
+                throw new IllegalArgumentException("Return quantity exceeds sold quantity");
+
+            Product product = repository.findProductById(itemReq.getProductId());
+            product.setCurrentStock(product.getCurrentStock().add(returnQty));
+
+            StockMovement sm = new StockMovement();
+            sm.setProduct(product);
+            sm.setMovementType("IN");
+            sm.setQuantity(returnQty);
+            sm.setReferenceType("SALE_RETURN");
+            sm.setReferenceId(sale.getId());
+            sm.setNotes("Return from Sale #" + sale.getId());
+            sm.setCreatedBy(user);
+            em.persist(sm);
+        }
+
+        return toResponse(repository.merge(sale));
+    }
+
+    public List<Sale> findAllForExport(LocalDate from, LocalDate to) {
+        return repository.findAllByDateRange(from, to);
+    }
+
+    public Optional<SaleResponse> cancel(Integer id, String cancelReason) {
         return repository.findById(id).map(sale -> {
             if ("COMPLETED".equals(sale.getStatus()))
                 throw new IllegalStateException("Cannot cancel a completed sale");
             if ("CANCELLED".equals(sale.getStatus()))
                 throw new IllegalStateException("Sale is already cancelled");
             sale.setStatus("CANCELLED");
+            sale.setCancelReason(cancelReason);
 
             for (SaleItem item : sale.getItems()) {
                 Product p = item.getProduct();
                 p.setCurrentStock(p.getCurrentStock().add(item.getQuantity()));
+
+                StockMovement sm = new StockMovement();
+                sm.setProduct(p);
+                sm.setMovementType("IN");
+                sm.setQuantity(item.getQuantity());
+                sm.setReferenceType("SALE");
+                sm.setReferenceId(sale.getId());
+                sm.setNotes("Sale #" + sale.getId() + " cancelled");
+                sm.setCreatedBy(sale.getCreatedBy());
+                em.persist(sm);
             }
 
             return toResponse(repository.merge(sale));
@@ -162,7 +234,7 @@ public class SaleService {
             sale.getCustomer() != null ? sale.getCustomer().getId() : null,
             sale.getCustomer() != null ? sale.getCustomer().getName() : "Walk-in",
             sale.getSaleDate(), sale.getTotalAmount(), sale.getPaidAmount(),
-            sale.getStatus(), sale.getNotes(), creator,
+            sale.getStatus(), sale.getNotes(), sale.getCancelReason(), creator,
             sale.getCreatedAt(), sale.getUpdatedAt(),
             itemResponses, paymentResponses);
     }

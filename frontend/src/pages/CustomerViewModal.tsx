@@ -1,4 +1,5 @@
 import { Modal, Descriptions, Tag, Button } from 'antd'
+import { useAuth } from '../context/AuthContext'
 import type { Customer } from '../types'
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
 }
 
 function CustomerViewModal({ customer, open, onClose, onEdit, onDelete }: Props) {
+  const { user } = useAuth()
+  const canWrite = user?.roles?.some(r => r === 'ADMIN' || r === 'MANAGER' || r === 'CASHIER')
   if (!customer) return null
 
   return (
@@ -17,8 +20,8 @@ function CustomerViewModal({ customer, open, onClose, onEdit, onDelete }: Props)
       footer={
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button size="small" onClick={onClose}>Close</Button>
-          <Button size="small" onClick={() => { onClose(); onEdit(customer) }}>Edit</Button>
-          <Button size="small" danger onClick={() => { onClose(); onDelete(customer) }}>Delete</Button>
+          {canWrite && <Button size="small" onClick={() => { onClose(); onEdit(customer) }}>Edit</Button>}
+          {canWrite && <Button size="small" danger onClick={() => { onClose(); onDelete(customer) }}>Delete</Button>}
         </div>
       }>
       <Descriptions column={2} size="small" bordered>

@@ -1,6 +1,5 @@
 package com.kaya.agri.resource;
 
-import com.kaya.agri.dto.PagedResponse;
 import com.kaya.agri.dto.PurchaseOrderRequest;
 import com.kaya.agri.dto.PurchaseOrderResponse;
 import com.kaya.agri.service.PurchaseOrderService;
@@ -26,9 +25,10 @@ public class PurchaseOrderResource {
     public Response list(
             @QueryParam("status") String status,
             @QueryParam("supplierId") Integer supplierId,
+            @QueryParam("search") String search,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        return Response.ok(service.list(status, supplierId, page, pageSize)).build();
+        return Response.ok(service.list(status, supplierId, search, page, pageSize)).build();
     }
 
     @GET @Path("/{id}")
@@ -45,7 +45,7 @@ public class PurchaseOrderResource {
             return Response.status(Response.Status.CREATED).entity(created).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                .entity(Map.of("error", e.getMessage()))
                 .build();
         }
     }
@@ -57,7 +57,7 @@ public class PurchaseOrderResource {
         String newStatus = body.get("status");
         if (newStatus == null || newStatus.isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("{\"error\":\"status required\"}")
+                .entity(Map.of("error", "status required"))
                 .build();
         }
         try {
@@ -67,7 +67,7 @@ public class PurchaseOrderResource {
                 .build();
         } catch (IllegalStateException | IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                .entity(Map.of("error", e.getMessage()))
                 .build();
         }
     }

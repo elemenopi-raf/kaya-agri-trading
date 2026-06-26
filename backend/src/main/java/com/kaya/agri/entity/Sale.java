@@ -2,7 +2,6 @@ package com.kaya.agri.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +18,7 @@ public class Sale {
     private Customer customer;
 
     @Column(name = "sale_date", nullable = false)
-    private LocalDate saleDate;
+    private LocalDateTime saleDate;
 
     @Column(name = "total_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalAmount = BigDecimal.ZERO;
@@ -32,6 +31,9 @@ public class Sale {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "cancel_reason", columnDefinition = "TEXT")
+    private String cancelReason;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
@@ -64,8 +66,8 @@ public class Sale {
     public void setId(Integer id) { this.id = id; }
     public Customer getCustomer() { return customer; }
     public void setCustomer(Customer customer) { this.customer = customer; }
-    public LocalDate getSaleDate() { return saleDate; }
-    public void setSaleDate(LocalDate saleDate) { this.saleDate = saleDate; }
+    public LocalDateTime getSaleDate() { return saleDate; }
+    public void setSaleDate(LocalDateTime saleDate) { this.saleDate = saleDate; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public BigDecimal getPaidAmount() { return paidAmount; }
@@ -74,6 +76,8 @@ public class Sale {
     public void setStatus(String status) { this.status = status; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public String getCancelReason() { return cancelReason; }
+    public void setCancelReason(String cancelReason) { this.cancelReason = cancelReason; }
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
     public List<SaleItem> getItems() { return items; }

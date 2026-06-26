@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import java.util.Map;
 
 @Path("/products")
 @Produces(MediaType.APPLICATION_JSON)
@@ -58,7 +59,7 @@ public class ProductResource {
             return Response.status(Response.Status.CREATED).entity(created).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                .entity(Map.of("error", e.getMessage()))
                 .build();
         }
     }

@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (token) {
-      api.get<{ username: string; displayName: string; roles: string[] }>('/auth/me')
+      api.get<User>('/auth/me')
         .then(data => setUser(data))
         .catch(() => { logout() })
         .finally(() => setLoading(false))
@@ -29,12 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   async function login(username: string, password: string) {
-    const res = await api.post<{ token: string; username: string; displayName: string; roles: string[] }>(
+    const res = await api.post<{ id: number; token: string; username: string; displayName: string; email?: string; active: boolean; roles: string[] }>(
       '/auth/login', { username, password }
     )
     localStorage.setItem('token', res.token)
     setToken(res.token)
-    setUser({ username: res.username, displayName: res.displayName, roles: res.roles })
+    setUser({ id: res.id, username: res.username, displayName: res.displayName, email: res.email, active: res.active, roles: res.roles, createdAt: '' })
   }
 
   function logout() {

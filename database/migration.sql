@@ -2,6 +2,10 @@
 INSERT INTO roles (name) VALUES ('MANAGER'), ('CASHIER')
 ON CONFLICT (name) DO NOTHING;
 
+-- Remove obsolete CLERK and VIEWER roles
+DELETE FROM user_roles WHERE role_id IN (SELECT id FROM roles WHERE name IN ('CLERK', 'VIEWER'));
+DELETE FROM roles WHERE name IN ('CLERK', 'VIEWER');
+
 -- Fix existing users' password hashes (correct BCrypt for admin123/manager123/cashier123)
 UPDATE users SET password_hash = '$2a$12$a126CKamJj.3pyHUtOPU1eYpqIpKy3spFi/pAFvCSnESUWSZa17ty'
 WHERE username = 'admin';
@@ -15,10 +19,10 @@ WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'manager');
 UPDATE users SET password_hash = '$2a$12$j127XgTF0niIRHgXyI5zlOhmUUFSsgKMggcxcuKO0vHbo6fAEJvdC'
 WHERE username = 'manager';
 
--- Assign MANAGER + CLERK roles to manager
+-- Assign MANAGER role to manager
 INSERT INTO user_roles (user_id, role_id)
 SELECT u.id, r.id FROM users u, roles r
-WHERE u.username = 'manager' AND r.name IN ('MANAGER', 'CLERK')
+WHERE u.username = 'manager' AND r.name = 'MANAGER'
 AND NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id);
 
 -- Create cashier user if not exists (password: cashier123)
@@ -55,7 +59,7 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE TABLE IF NOT EXISTS sales (
     id SERIAL PRIMARY KEY,
     customer_id INTEGER REFERENCES customers(id),
-    sale_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    sale_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     total_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
     paid_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'CANCELLED')),
@@ -84,3 +88,11 @@ CREATE TABLE IF NOT EXISTS payments (
     created_by INTEGER REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migrate date columns to timestamp for full datetime precision
+ALTER TABLE sales ALTER COLUMN sale_date TYPE TIMESTAMP USING sale_date + TIME '00:00:00';
+ALTER TABLE purchase_orders ALTER COLUMN order_date TYPE TIMESTAMP USING order_date + TIME '00:00:00';
+ALTER TABLE purchase_orders ALTER COLUMN expected_date TYPE TIMESTAMP USING expected_date + TIME '00:00:00';
+
+-- Add cancel_reason column to sales
+ALTER TABLE sales ADD COLUMN IF NOT EXISTS cancel_reason TEXT;

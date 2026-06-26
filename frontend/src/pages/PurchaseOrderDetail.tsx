@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Descriptions, Table, Tag, Button, Typography, Spin, Modal, message } from 'antd'
+import { Descriptions, Table, Tag, Button, Typography, Modal, message, Skeleton } from 'antd'
+import dayjs from 'dayjs'
 import api from '../services/api'
 import type { PurchaseOrder } from '../types'
 
 const statusColors: Record<string, string> = {
-  PENDING: 'orange', APPROVED: 'green', RECEIVED: 'blue', CANCELLED: 'red',
+  PENDING: '#d97706', APPROVED: 'green', RECEIVED: 'blue', CANCELLED: 'red',
 }
 
 function PurchaseOrderDetail() {
@@ -35,7 +36,7 @@ function PurchaseOrderDetail() {
     Modal.confirm({ title, content, onOk: () => updateStatus(newStatus), okButtonProps: { danger: newStatus === 'CANCELLED' } })
   }
 
-  if (!po) return <Spin style={{ display: 'block', marginTop: 48 }} />
+  if (!po) return <div style={{ padding: 24 }}><Skeleton active paragraph={{ rows: 4 }} /></div>
 
   const totalAmount = po.items.reduce((sum, item) => sum + item.totalPrice, 0)
 
@@ -61,8 +62,8 @@ function PurchaseOrderDetail() {
         <Descriptions.Item label="Status">
           <Tag color={statusColors[po.status]}>{po.status}</Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="Order Date">{po.orderDate}</Descriptions.Item>
-        <Descriptions.Item label="Expected">{po.expectedDate || '-'}</Descriptions.Item>
+        <Descriptions.Item label="Order Date">{po.orderDate ? dayjs(po.orderDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
+        <Descriptions.Item label="Expected">{po.expectedDate ? dayjs(po.expectedDate).format('YYYY-MM-DD HH:mm') : '-'}</Descriptions.Item>
         <Descriptions.Item label="Created By">{po.createdBy || '-'}</Descriptions.Item>
       </Descriptions>
 

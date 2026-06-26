@@ -33,6 +33,7 @@ services:
       DB_USER: kaya
       DB_PASSWORD: kaya_secret
       JWT_SECRET: kaya-agri-local-dev-jwt-secret-32chars!!
+      TZ: Asia/Manila
 
   frontend:
     build:

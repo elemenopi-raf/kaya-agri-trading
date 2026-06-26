@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,7 +17,7 @@ public class StockMovementRepository {
     private EntityManager em;
 
     public List<StockMovement> findAll(Integer productId, String movementType,
-                                        int page, int pageSize) {
+                                         LocalDate from, LocalDate to, int page, int pageSize) {
         StringBuilder jpql = new StringBuilder(
             "SELECT sm FROM StockMovement sm JOIN FETCH sm.product p LEFT JOIN FETCH sm.batch b LEFT JOIN FETCH sm.createdBy WHERE 1=1");
 
@@ -26,28 +27,54 @@ public class StockMovementRepository {
         if (movementType != null && !movementType.isBlank()) {
             jpql.append(" AND sm.movementType = :movementType");
         }
+        if (from != null) jpql.append(" AND sm.createdAt >= :from");
+        if (to != null) jpql.append(" AND sm.createdAt <= :to");
         jpql.append(" ORDER BY sm.createdAt DESC");
 
         TypedQuery<StockMovement> query = em.createQuery(jpql.toString(), StockMovement.class);
         if (productId != null) query.setParameter("productId", productId);
         if (movementType != null && !movementType.isBlank()) query.setParameter("movementType", movementType.toUpperCase());
+        if (from != null) query.setParameter("from", from.atStartOfDay());
+        if (to != null) query.setParameter("to", to.atTime(23, 59, 59));
 
         query.setFirstResult(page * pageSize);
         query.setMaxResults(pageSize);
         return query.getResultList();
     }
 
-    public long count(Integer productId, String movementType) {
+    public long count(Integer productId, String movementType, LocalDate from, LocalDate to) {
         StringBuilder jpql = new StringBuilder(
             "SELECT COUNT(sm) FROM StockMovement sm WHERE 1=1");
         if (productId != null) jpql.append(" AND sm.product.id = :productId");
         if (movementType != null && !movementType.isBlank()) jpql.append(" AND sm.movementType = :movementType");
+        if (from != null) jpql.append(" AND sm.createdAt >= :from");
+        if (to != null) jpql.append(" AND sm.createdAt <= :to");
 
         TypedQuery<Long> query = em.createQuery(jpql.toString(), Long.class);
         if (productId != null) query.setParameter("productId", productId);
         if (movementType != null && !movementType.isBlank()) query.setParameter("movementType", movementType.toUpperCase());
+        if (from != null) query.setParameter("from", from.atStartOfDay());
+        if (to != null) query.setParameter("to", to.atTime(23, 59, 59));
 
         return query.getSingleResult();
+    }
+
+    public List<StockMovement> findAllForExport(Integer productId, String movementType,
+                                                   LocalDate from, LocalDate to) {
+        StringBuilder jpql = new StringBuilder(
+            "SELECT sm FROM StockMovement sm JOIN FETCH sm.product p LEFT JOIN FETCH sm.batch b LEFT JOIN FETCH sm.createdBy WHERE 1=1");
+        if (productId != null) jpql.append(" AND p.id = :productId");
+        if (movementType != null && !movementType.isBlank()) jpql.append(" AND sm.movementType = :movementType");
+        if (from != null) jpql.append(" AND sm.createdAt >= :from");
+        if (to != null) jpql.append(" AND sm.createdAt <= :to");
+        jpql.append(" ORDER BY sm.createdAt DESC");
+
+        TypedQuery<StockMovement> query = em.createQuery(jpql.toString(), StockMovement.class);
+        if (productId != null) query.setParameter("productId", productId);
+        if (movementType != null && !movementType.isBlank()) query.setParameter("movementType", movementType.toUpperCase());
+        if (from != null) query.setParameter("from", from.atStartOfDay());
+        if (to != null) query.setParameter("to", to.atTime(23, 59, 59));
+        return query.getResultList();
     }
 
     public Optional<StockMovement> findById(Integer id) {

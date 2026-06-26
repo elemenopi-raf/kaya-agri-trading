@@ -66,8 +66,8 @@ cd frontend && npm ci && npm run build  # which runs: tsc && vite build
 
 | User | Password | Roles |
 |------|----------|-------|
-| admin | admin123 | ADMIN, MANAGER, CLERK, CASHIER, VIEWER |
-| manager | manager123 | MANAGER, CLERK |
+| admin | admin123 | ADMIN, MANAGER, CASHIER |
+| manager | manager123 | MANAGER |
 | cashier | cashier123 | CASHIER |
 
 BCrypt cost factor 12 (`at.favre.lib:bcrypt`). If passwords get out of sync: `POST /api/admin/re-seed` (public endpoint) or restart the backend container.

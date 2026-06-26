@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +36,7 @@ public class AuthResource {
     public Response login(LoginRequest request) {
         if (request.getUsername() == null || request.getPassword() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                .entity("{\"error\":\"username and password required\"}")
+                .entity(Map.of("error", "username and password required"))
                 .build();
         }
 
@@ -44,11 +45,12 @@ public class AuthResource {
                 Set<String> roles = userService.getRoleNames(user);
                 String token = jwtProvider.generateToken(user.getUsername(), roles);
                 return Response.ok(new LoginResponse(
-                    token, user.getUsername(), user.getDisplayName(), roles
+                    user.getId(), token, user.getUsername(), user.getDisplayName(),
+                    user.getEmail(), user.getActive(), roles
                 )).build();
             })
             .orElse(Response.status(Response.Status.UNAUTHORIZED)
-                .entity("{\"error\":\"invalid credentials\"}")
+                .entity(Map.of("error", "invalid credentials"))
                 .build());
     }
 
@@ -58,9 +60,13 @@ public class AuthResource {
         String username = securityContext.getUserPrincipal().getName();
         return userRepository.findByUsername(username)
             .map(user -> Response.ok(Map.of(
+                "id", user.getId(),
                 "username", user.getUsername(),
                 "displayName", user.getDisplayName(),
-                "roles", userService.getRoleNames(user)
+                "email", user.getEmail() != null ? user.getEmail() : "",
+                "active", user.getActive(),
+                "roles", userService.getRoleNames(user),
+                "createdAt", user.getCreatedAt() != null ? user.getCreatedAt().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : ""
             )).build())
             .orElse(Response.status(Response.Status.UNAUTHORIZED).build());
     }

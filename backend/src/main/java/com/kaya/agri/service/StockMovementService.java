@@ -9,6 +9,7 @@ import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,9 +21,9 @@ public class StockMovementService {
     private StockMovementRepository repository;
 
     public PagedResponse<StockMovementResponse> list(Integer productId, String movementType,
-                                                      int page, int pageSize) {
-        List<StockMovement> list = repository.findAll(productId, movementType, page, pageSize);
-        long total = repository.count(productId, movementType);
+                                                       LocalDate from, LocalDate to, int page, int pageSize) {
+        List<StockMovement> list = repository.findAll(productId, movementType, from, to, page, pageSize);
+        long total = repository.count(productId, movementType, from, to);
 
         List<StockMovementResponse> items = list.stream()
             .map(this::toResponse)
@@ -33,6 +34,11 @@ public class StockMovementService {
 
     public Optional<StockMovementResponse> getById(Integer id) {
         return repository.findById(id).map(this::toResponse);
+    }
+
+    public List<StockMovement> findAllForExport(Integer productId, String movementType,
+                                                   LocalDate from, LocalDate to) {
+        return repository.findAllForExport(productId, movementType, from, to);
     }
 
     public StockMovementResponse create(StockMovementRequest request, String username) {

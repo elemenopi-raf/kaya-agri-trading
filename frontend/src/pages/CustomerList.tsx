@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Table, Input, Button, Typography, Tag, Modal, message } from 'antd'
-import { PlusOutlined, DeleteOutlined, EditOutlined, CloseOutlined } from '@ant-design/icons'
+import { Table, Input, Button, Typography, Tag, Modal, message, Dropdown } from 'antd'
+import { PlusOutlined, DeleteOutlined, EditOutlined, CloseOutlined, EyeOutlined, MoreOutlined } from '@ant-design/icons'
+import type { MenuProps } from 'antd'
 import api from '../services/api'
+import { useAuth } from '../context/AuthContext'
 import type { Customer, PagedResponse } from '../types'
 import CustomerCreateModal from './CustomerCreateModal'
 import CustomerViewModal from './CustomerViewModal'
 import CustomerEditModal from './CustomerEditModal'
 
 function CustomerList() {
+  const { user } = useAuth()
   const location = useLocation()
+  const canWrite = user?.roles?.some(r => r === 'ADMIN' || r === 'MANAGER' || r === 'CASHIER')
   const [customers, setCustomers] = useState<Customer[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -85,11 +89,30 @@ function CustomerList() {
   }
 
   const columns = [
+    { title: '#', key: 'rowNum', width: 50, render: (_: any, __: any, i: number) => (page - 1) * 10 + i + 1 },
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Phone', dataIndex: 'phone', key: 'phone', render: (v: string) => v || '-' },
     { title: 'Email', dataIndex: 'email', key: 'email', render: (v: string) => v || '-' },
     { title: 'Address', dataIndex: 'address', key: 'address', render: (v: string) => v || '-' },
     { title: 'Active', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">Yes</Tag> : <Tag>No</Tag> },
+    {
+      title: '', key: 'actions', width: 48,
+      render: (_: any, record: Customer) => {
+        const items: MenuProps['items'] = [
+          { key: 'view', icon: <EyeOutlined />, label: 'View', onClick: () => handleView(record) },
+        ]
+        if (canWrite) {
+          items.push({ key: 'edit', icon: <EditOutlined />, label: 'Edit', onClick: () => handleEdit(record) })
+          items.push({ type: 'divider' })
+          items.push({ key: 'delete', icon: <DeleteOutlined />, label: 'Delete', danger: true, onClick: () => handleDelete(record) })
+        }
+        return selectedRowKeys.length > 0 ? null : (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button size="small" type="text" icon={<MoreOutlined />} onClick={e => e.stopPropagation()} />
+          </Dropdown>
+        )
+      },
+    },
   ]
 
   const rowSelection = {
@@ -101,7 +124,7 @@ function CustomerList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Typography.Title level={3} style={{ margin: 0 }}>Customers</Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>New Customer</Button>
+        {canWrite && <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>New Customer</Button>}
       </div>
       <Input.Search placeholder="Search customers..." allowClear style={{ width: 300, marginBottom: 16 }}
         onSearch={v => { setSearch(v); setPage(1) }}
@@ -110,21 +133,20 @@ function CustomerList() {
       {selectedRowKeys.length > 0 && (
         <div style={{ marginBottom: 16, padding: '8px 12px', background: '#e6f4ff', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontWeight: 500 }}>{selectedRowKeys.length} selected</span>
-          {selectedRowKeys.length === 1 && (
+          {canWrite && selectedRowKeys.length === 1 && (
             <Button size="small" type="primary" icon={<EditOutlined />} onClick={() => {
               const c = customers.find(c => c.id === selectedRowKeys[0])
               if (c) handleEdit(c)
             }}>Edit</Button>
           )}
-          <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBulkDelete}>Delete ({selectedRowKeys.length})</Button>
+          {canWrite && <Button size="small" danger icon={<DeleteOutlined />} onClick={handleBulkDelete}>Delete ({selectedRowKeys.length})</Button>}
           <Button size="small" icon={<CloseOutlined />} onClick={() => setSelectedRowKeys([])}>Clear</Button>
         </div>
       )}
 
       <div className="table-container">
         <Table dataSource={customers} columns={columns} rowKey="id" loading={loading} rowSelection={rowSelection} rowClassName="table-striped"
-          pagination={{ current: page, pageSize: 10, total, onChange: p => setPage(p), showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`, showSizeChanger: false }}
-          onRow={r => ({ onClick: () => handleView(r), style: { cursor: 'pointer' } })} />
+          pagination={{ current: page, pageSize: 10, total, onChange: p => setPage(p), showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`, showSizeChanger: false }} />
       </div>
       <CustomerCreateModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <CustomerViewModal customer={viewingCustomer} open={viewModalOpen}

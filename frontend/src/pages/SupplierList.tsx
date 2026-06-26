@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Table, Input, Button, Typography, Tag, Modal, message } from 'antd'
-import { PlusOutlined, DeleteOutlined, EditOutlined, CloseOutlined } from '@ant-design/icons'
+import { Table, Input, Button, Typography, Tag, Modal, message, Dropdown } from 'antd'
+import { PlusOutlined, DeleteOutlined, EditOutlined, CloseOutlined, EyeOutlined, MoreOutlined } from '@ant-design/icons'
+import type { MenuProps } from 'antd'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import type { Supplier, PagedResponse } from '../types'
@@ -88,11 +89,30 @@ function SupplierList() {
   }
 
   const columns = [
+    { title: '#', key: 'rowNum', width: 50, render: (_: any, __: any, i: number) => (page - 1) * 10 + i + 1 },
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'Contact', dataIndex: 'contactPerson', key: 'contactPerson', render: (v: string) => v || '-' },
     { title: 'Phone', dataIndex: 'phone', key: 'phone', render: (v: string) => v || '-' },
     { title: 'Email', dataIndex: 'email', key: 'email', render: (v: string) => v || '-' },
     { title: 'Active', dataIndex: 'active', key: 'active', render: (v: boolean) => v ? <Tag color="green">Yes</Tag> : <Tag>No</Tag> },
+    {
+      title: '', key: 'actions', width: 48,
+      render: (_: any, record: Supplier) => {
+        const items: MenuProps['items'] = [
+          { key: 'view', icon: <EyeOutlined />, label: 'View', onClick: () => handleView(record) },
+        ]
+        if (canWrite) {
+          items.push({ key: 'edit', icon: <EditOutlined />, label: 'Edit', onClick: () => handleEdit(record) })
+          items.push({ type: 'divider' })
+          items.push({ key: 'delete', icon: <DeleteOutlined />, label: 'Delete', danger: true, onClick: () => handleDelete(record) })
+        }
+        return selectedRowKeys.length > 0 ? null : (
+          <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+            <Button size="small" type="text" icon={<MoreOutlined />} onClick={e => e.stopPropagation()} />
+          </Dropdown>
+        )
+      },
+    },
   ]
 
   const rowSelection = {
@@ -128,8 +148,7 @@ function SupplierList() {
 
       <div className="table-container">
         <Table dataSource={suppliers} columns={columns} rowKey="id" loading={loading} rowSelection={rowSelection} rowClassName="table-striped"
-          pagination={{ current: page, pageSize: 10, total, onChange: p => setPage(p), showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`, showSizeChanger: false }}
-          onRow={r => ({ onClick: () => handleView(r), style: { cursor: 'pointer' } })} />
+          pagination={{ current: page, pageSize: 10, total, onChange: p => setPage(p), showTotal: (total, range) => `${range[0]}–${range[1]} of ${total}`, showSizeChanger: false }} />
       </div>
       <SupplierCreateModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <SupplierViewModal supplier={viewingSupplier} open={viewModalOpen}

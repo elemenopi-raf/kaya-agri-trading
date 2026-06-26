@@ -19,9 +19,9 @@ function Login() {
   return (
     <div style={{ maxWidth: 400, margin: '100px auto' }}>
       <Card>
-        <Typography.Title level={2} style={{ textAlign: 'center', marginBottom: 24 }}>
-          Kaya Agri Trading
-        </Typography.Title>
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <img src="/kaya-login-brand.png" alt="Kaya Agri Trading" style={{ maxWidth: '100%', height: 'auto', maxHeight: 220 }} />
+        </div>
         <Typography.Title level={5} style={{ textAlign: 'center' }}>
           Sign In
         </Typography.Title>
